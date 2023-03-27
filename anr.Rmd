@@ -89,7 +89,7 @@ anr.col <- anr %>%
   bind_rows(
     anr %>%
       filter(type == "DOS") %>%
-      group_by(sexe = sexe.partenaires,type=paste("Partenariat",type)) %>%
+      group_by(sexe = sexe.partenaires,type=paste("Portage",type)) %>%
       summarise(
         Nombre.projets = n(),
         Financement = sum(Projet.Aide_allouee,na.rm = TRUE)
@@ -105,6 +105,22 @@ anr.col <- anr %>%
 
 anr.col %>% kableExtra::kable()
 ```
+
+```{r anr.col.sum}
+anr %>% group_by(sexe = sexe.coordinateur) %>%
+  summarise(
+    Nombre.projets = n(),
+    Financement = sum(Projet.Aide_allouee,na.rm = TRUE)
+    ) %>%
+  ungroup() %>%
+  mutate(
+    sexe = recode(sexe, "Femme" = "Femmes", "Homme" = "Hommes"),
+    Part.projets = ifelse(is.na(sexe), NA, Nombre.projets / sum(ifelse(!is.na(sexe),Nombre.projets,0))),
+    Part.financement = ifelse(is.na(sexe), NA, Financement / sum(ifelse(!is.na(sexe),Financement,0)))
+  ) %>%
+  kableExtra::kable()
+```
+
 
 ```{r anr.col.plot}
 anr.col %>%

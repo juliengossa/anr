@@ -167,7 +167,7 @@ NA
 Femmes
 </td>
 <td style="text-align:left;">
-Partenariat DOS
+Portage DOS
 </td>
 <td style="text-align:right;">
 2190
@@ -187,7 +187,7 @@ Partenariat DOS
 Hommes
 </td>
 <td style="text-align:left;">
-Partenariat DOS
+Portage DOS
 </td>
 <td style="text-align:right;">
 8342
@@ -207,7 +207,7 @@ Partenariat DOS
 Mixte
 </td>
 <td style="text-align:left;">
-Partenariat DOS
+Portage DOS
 </td>
 <td style="text-align:right;">
 8473
@@ -227,13 +227,87 @@ Partenariat DOS
 NA
 </td>
 <td style="text-align:left;">
-Partenariat DOS
+Portage DOS
 </td>
 <td style="text-align:right;">
 7150
 </td>
 <td style="text-align:right;">
 1614946708
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th style="text-align:left;">
+sexe
+</th>
+<th style="text-align:right;">
+Nombre.projets
+</th>
+<th style="text-align:right;">
+Financement
+</th>
+<th style="text-align:right;">
+Part.projets
+</th>
+<th style="text-align:right;">
+Part.financement
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Femmes
+</td>
+<td style="text-align:right;">
+6521
+</td>
+<td style="text-align:right;">
+3995925779
+</td>
+<td style="text-align:right;">
+0.2791285
+</td>
+<td style="text-align:right;">
+0.2169632
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Hommes
+</td>
+<td style="text-align:right;">
+16841
+</td>
+<td style="text-align:right;">
+14421603757
+</td>
+<td style="text-align:right;">
+0.7208715
+</td>
+<td style="text-align:right;">
+0.7830368
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+4280
+</td>
+<td style="text-align:right;">
+3887228710
 </td>
 <td style="text-align:right;">
 NA
