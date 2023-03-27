@@ -125,9 +125,10 @@ anr %>% group_by(sexe = sexe.coordinateur) %>%
 ```{r anr.col.plot}
 anr.col %>%
   filter(!is.na(sexe)) %>%
-  ggplot(aes(x=sexe,y=Financement,fill=sexe)) + geom_col() +
+  ggplot(aes(x=sexe,y=Financement,fill=sexe)) + geom_col(color="black") +
   facet_wrap(type~., drop = TRUE, scales = "free_x") +
   scale_y_continuous(labels = ~ paste(.x / 1e9, "Md€"), breaks = seq(0,10,2)*1e9) +
+  scale_fill_manual(values = c("grey30","grey90","grey40")) +
   theme_cpesr(x_grid = FALSE) +
   theme(legend.position = "None") +
   ylab("Financement ANR")
@@ -163,6 +164,8 @@ anr.taux <- anr %>%
 
 anr.taux %>% kableExtra::kable()
 ```
+
+
 ```{r anr.taux.plot}
 anr.taux %>%
   pivot_longer(starts_with("Part")) %>%
@@ -170,10 +173,11 @@ anr.taux %>%
                        levels = c("Part.coordinatrices","Part.responsables","Part.financement"),
                        labels = c("Coordinatrices","Responsables scientifiques","Financement avec coordinatrice")
   )) %>%
-  ggplot(aes(x=édition,y=value,color=name)) + geom_line(size = 1) + geom_point(shape = 21, size=3, stroke= 1, fill="white") +
+  ggplot(aes(x=édition,y=value,color=name)) + geom_line(size = 1) + geom_point(aes(shape = name), size=3, stroke= 1, fill="white") +
   expand_limits(y=0) +
   scale_x_continuous(breaks=scales::pretty_breaks(), name="Edition de l'appel à projets ANR") +
   scale_y_continuous(labels = scales::percent, name="Part des femmes") +
-  scale_color_brewer(palette = "Dark2", name="Part de")
+  scale_color_manual(values=c("grey10","grey40","grey70"), name="Part de") +
+  scale_shape_discrete(name="Part de")
 ```
 
