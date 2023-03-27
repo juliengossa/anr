@@ -1,0 +1,163 @@
+---
+title: "Etude des sexes pour les financements ANR"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+knitr::opts_chunk$set(fig.retina = 2, fig.asp = 9/16)
+library(tidyverse)
+library(ggcpesrthemes)
+
+theme_set(theme_cpesr())
+```
+
+```{r data, cache = TRUE}
+prenoms <- read.csv2("nat2021.csv") %>%
+  group_by(
+    prenom = preusuel, 
+    sexe = factor(sexe, labels = c("Homme","Femme"))) %>%
+  summarise(nombre = sum(nombre)) %>%
+  pivot_wider(names_from = sexe, values_from = nombre, values_fill = 0) %>%
+  mutate(sexe = case_when(
+    Homme > Femme * 100 ~ "Homme",
+    Femme > Homme * 100 ~ "Femme",
+    TRUE ~ NA_character_
+  )) %>%
+  select(prenom,sexe)
+
+projets <- bind_rows(
+    read.csv2("anr-dgpie-depuis-2010-projets-finances-20221122-projets.csv", dec='.') %>%
+    mutate(type = "DGPIE",
+           édition = Action.Edition),
+    read.csv2("anr-dos-2005-2009-projets-finances-20210826-projets.csv", dec='.') %>% 
+    mutate(type = "DOS",
+           édition = AAP.Edition),
+    read.csv2("anr-dos-depuis-2010-projets-finances-20230104-projets.csv", dec='.') %>%
+    mutate(type = "DOS",
+           édition = AAP.Edition)
+) 
+
+partenaires <- bind_rows(
+  read.csv2("anr-dgpie-depuis-2010-projets-finances-20221122-partenaires.csv") %>% filter(Projet.Partenaire.Est_coordinateur == "True"),
+  read.csv2("anr-dos-2005-2009-projets-finances-20210826-partenaires.csv"),
+  read.csv2("anr-dos-depuis-2010-projets-finances-20230104-partenaires.csv")
+) %>% 
+  select(Projet.Code_Decision_ANR, Projet.Partenaire.Est_coordinateur, Projet.Partenaire.Responsable_scientifique.Prenom, Projet.Partenaire.Responsable_scientifique.Nom) %>%
+  unique() %>%
+  mutate(prenom = str_to_upper(Projet.Partenaire.Responsable_scientifique.Prenom)) %>%
+  left_join(prenoms)
+
+partenaires.stats <- full_join(
+  partenaires %>%
+    group_by(Projet.Code_Decision_ANR) %>%
+    summarise(
+      nb.partenaires = n(),
+      nb.femmes = sum(sexe == "Femme", na.rm=TRUE),
+      nb.hommes = sum(sexe == "Homme", na.rm=TRUE)
+    ) %>%
+    mutate(sexe.partenaires = case_when(
+      nb.femmes == nb.partenaires ~ "Femme",
+      nb.hommes == nb.partenaires ~ "Homme",
+      nb.femmes > 0 & nb.hommes > 0 ~ "Mixte",
+      TRUE ~ NA_character_
+    )),
+    partenaires %>%
+      filter(Projet.Partenaire.Est_coordinateur == "True") %>%
+      transmute(Projet.Code_Decision_ANR, sexe.coordinateur = sexe)
+)
+    
+
+anr <- left_join(projets, partenaires.stats)
+```
+
+
+https://www.data.gouv.fr/fr/datasets/anr-02-projets-anr-dgpie-detail-des-projets-et-des-partenaires/
+
+https://www.data.gouv.fr/fr/datasets/anr-01-projets-anr-dos-detail-des-projets-et-des-partenaires/
+
+https://www.insee.fr/fr/statistiques/2540004?sommaire=4767262
+
+
+```{r fin.type}
+anr.col <- anr %>%
+  group_by(sexe = sexe.coordinateur,type=paste("Coordination",type)) %>%
+  summarise(
+    Nombre.projets = n(),
+    Financement = sum(Projet.Aide_allouee,na.rm = TRUE)
+    ) %>%
+  bind_rows(
+    anr %>%
+      filter(type == "DOS") %>%
+      group_by(sexe = sexe.partenaires,type=paste("Partenariat",type)) %>%
+      summarise(
+        Nombre.projets = n(),
+        Financement = sum(Projet.Aide_allouee,na.rm = TRUE)
+        )
+  ) %>%
+  group_by(type) %>%
+  mutate(
+    sexe = recode(sexe, "Femme" = "Femmes", "Homme" = "Hommes"),
+    Part.projets = ifelse(is.na(sexe), NA, Nombre.projets / sum(ifelse(!is.na(sexe),Nombre.projets,0))),
+    Part.financement = ifelse(is.na(sexe), NA, Financement / sum(ifelse(!is.na(sexe),Financement,0)))
+  ) %>%
+  arrange(type)
+
+anr.col %>% kableExtra::kable()
+```
+
+```{r anr.col.plot}
+anr.col %>%
+  filter(!is.na(sexe)) %>%
+  ggplot(aes(x=sexe,y=Financement,fill=sexe)) + geom_col() +
+  facet_wrap(type~., drop = TRUE, scales = "free_x") +
+  scale_y_continuous(labels = ~ paste(.x / 1e9, "Md€"), breaks = seq(0,10,2)*1e9) +
+  theme_cpesr(x_grid = FALSE) +
+  theme(legend.position = "None") +
+  ylab("Financement ANR")
+```
+
+
+
+
+
+## Taux porteuse + financement
+
+```{r anr.taux.dos}
+anr.taux <- anr %>%
+  filter(type == "DOS", édition >= 2010) %>%
+  group_by(édition) %>%
+  summarise(Part.responsables = sum(nb.femmes) / (sum(nb.femmes)+sum(nb.hommes))) %>%
+  left_join(anr %>%
+    filter(type == "DOS", édition >= 2010) %>%
+    group_by(édition, sexe.coordinateur) %>%
+    summarise(
+      nb = n(),
+      financement = sum(Projet.Aide_allouee)
+      ) %>%
+    filter(!is.na(sexe.coordinateur)) %>%
+    group_by(édition) %>%
+    mutate(
+      Part.coordinatrices = nb / sum(nb),
+      Part.financement = financement / sum(financement)) %>%
+    filter(sexe.coordinateur == "Femme") 
+) %>%
+  #pivot_longer(starts_with("Part")) %>%
+  arrange(édition)
+
+anr.taux %>% kableExtra::kable()
+```
+```{r anr.taux.plot}
+anr.taux %>%
+  pivot_longer(starts_with("Part")) %>%
+  mutate(name = factor(name,
+                       levels = c("Part.coordinatrices","Part.responsables","Part.financement"),
+                       labels = c("Coordinatrices","Responsables scientifiques","Financement avec coordinatrice")
+  )) %>%
+  ggplot(aes(x=édition,y=value,color=name)) + geom_line(size = 1) + geom_point(shape = 21, size=3, stroke= 1, fill="white") +
+  expand_limits(y=0) +
+  scale_x_continuous(breaks=scales::pretty_breaks(), name="Edition de l'appel à projets ANR") +
+  scale_y_continuous(labels = scales::percent, name="Part des femmes") +
+  scale_color_brewer(palette = "Dark2", name="Part de")
+```
+
